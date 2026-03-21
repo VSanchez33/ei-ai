@@ -52,3 +52,49 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print("Device used: ", device)
 model = DistilBertForSequenceClassification.from_pretrained('distilbert-base-uncased', num_labels=6)
 model.to(device)
+
+#Optimizer and loss
+print("---OPTIMIZER AND LOSS FUNCTION STEP---")
+optimizer = AdamW(model.parameters(), lr=2e-5)
+criterion = nn.CrossEntropyLoss()
+
+#Training loop
+print("---TRAINING STEP---")
+for epoch in range(20):
+    model.train()
+    total_loss = 0
+    for input_ids, attention_mask, labels in train_loader:
+        input_ids = input_ids.to(device)
+        attention_mask = attention_mask.to(device)
+        labels = labels.to(device)
+
+        optimizer.zero_grad()
+        outputs = model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
+        logits = outputs.logits
+        loss = criterion(logits, labels)
+
+        loss.backward()
+        optimizer.step()
+        total_loss += loss.item()
+    avg_loss = total_loss / len(train_loader)
+    print(f"Epoch {epoch+1}, Loss: {avg_loss:.4f}")
+
+#Evaluation
+model.eval()
+all_preds = []
+with torch.no_grad():
+    for input_ids, attention_mask, labels in test_loader:
+        input_ids = input_ids.to(device)
+        attention_mask = attention_mask.to(device)
+        outputs = model(input_ids=input_ids, attention_mask=attention_mask).logits
+        preds = torch.argmax(outputs, dim=1)
+        all_preds.extend(preds.cpu().tolist())
+
+acc = accuracy_score(y_test, all_preds)
+print(f"Test Accuracy: {acc:.4f}")
+
+total_time = time.time() - start_time
+hours = int(total_time // 3600)
+minutes = int((total_time % 3600) // 60)
+seconds = int(total_time % 60)
+print(f"Total training time: {hours}h {minutes}m {seconds}s")
