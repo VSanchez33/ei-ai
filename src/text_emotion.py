@@ -60,7 +60,7 @@ criterion = nn.CrossEntropyLoss()
 
 #Training loop
 print("---TRAINING STEP---")
-for epoch in range(20):
+for epoch in range(10):
     model.train()
     total_loss = 0
     for input_ids, attention_mask, labels in train_loader:
