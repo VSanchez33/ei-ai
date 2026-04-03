@@ -1,17 +1,18 @@
 import time
+import numpy as np ##
 import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torchvision import datasets, transforms
-from torch.utils.data import DataLoader, Subset
+from torch.utils.data import DataLoader, Subset, WeightedRandomSampler
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, confusion_matrix
 
 start_time = time.time()
 
 print("---DATA STEP---")
-data_dir = "./data/dataset"
+data_dir = "./data/dataset" ## change this to your dataset path
 
 # Transforms
 transform = transforms.Compose([
@@ -45,8 +46,28 @@ train_dataset = Subset(full_dataset, train_indices)
 val_dataset = Subset(full_dataset, val_indices)
 test_dataset = Subset(full_dataset, test_indices)
 
+
+## adding here to compute class counts and weights for weighted loss and oversampling to solve the issue of the model failing for some classes due to class imbalance
+# counting samples per class in the training set
+num_classes = len(class_names)
+class_counts = [0] * num_classes
+for idx in train_indices:
+    label = full_dataset.targets[idx]
+    class_counts[label] += 1
+print("Training samples per class:", {class_names[i]: class_counts[i] for i in range(num_classes)})
+
+# compute class weights for weighted loss
+# minority classes (Angry, Surprise) get higher weight -> sampled more often
+sample_weights = [1.0 / class_counts[targets[i]] for i in train_indices]
+sampler = WeightedRandomSampler(
+    weights=sample_weights,
+    num_samples=len(sample_weights),
+    replacement=True        # allows minority samples to be drawn multiple times
+)
+
+
 # DataLoaders
-train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+train_loader = DataLoader(train_dataset, batch_size=32, sampler=sampler) # now uses sampler to balance classes during training
 val_loader = DataLoader(val_dataset, batch_size=32)
 test_loader = DataLoader(test_dataset, batch_size=32)
 
@@ -92,11 +113,20 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Device used: ", device)
 
 model = EmotionCNN(num_classes=len(class_names)).to(device)
-criterion = nn.CrossEntropyLoss()
+
+## modifying the nn.CrossEntropyLoss to the class-weighted version to give more importance to minority classes during training
+class_weights = torch.tensor([1.0 / class_counts[i] for i in range(num_classes)], dtype=torch.float).to(device)
+class_weights = class_weights / class_weights.sum() * num_classes  # normalize weights to sum to num_classes
+criterion = nn.CrossEntropyLoss(weight=class_weights)
+print("Class weights for loss:", {class_names[i]: class_weights[i].item() for i in range(num_classes)})
+
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 
+## adding a learning rate scheduler to reduce the learning rate if the validation loss plateaus (like it did before after epoch 15), which can help the model converge better especially with imbalanced data
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.5)  # reduce LR by half every 5 epochs
+
 print("---TRAINING STEP---")
-for epoch in range(10):
+for epoch in range(30):
     model.train()
     total_loss = 0
     for images, labels, in train_loader:
@@ -111,7 +141,19 @@ for epoch in range(10):
         total_loss += loss.item()
     avg_loss = total_loss / len(train_loader)
 
-    print(f"Epoch {epoch+1}, Loss: {avg_loss:.4f}")
+    ## adding validation loss tracking to monitor overfitting and adjust learning rate if needed
+    model.eval()
+    val_loss = 0
+    with torch.no_grad():
+        for images, labels in val_loader:
+            images, labels = images.to(device), labels.to(device)
+            outputs = model(images)
+            loss = criterion(outputs, labels)
+            val_loss += loss.item()
+    avg_val_loss = val_loss / len(val_loader)
+
+    print(f"Epoch {epoch+1}, Training Loss: {avg_loss:.4f}, Validation Loss: {avg_val_loss:.4f}")
+    scheduler.step()  # update learning rate based on scheduler
 
 print("---TEST EVALUATION STEP---")
 model.eval()
@@ -125,7 +167,6 @@ with torch.no_grad():
         all_preds.extend(predicted.cpu().tolist())
         all_labels.extend(labels.cpu().tolist())
 
-from sklearn.metrics import classification_report, confusion_matrix
 print("Test Accuracy:", sum(np.array(all_preds)==np.array(all_labels))/len(all_labels))
 print("\nClassification Report:")
 print(classification_report(all_labels, all_preds, target_names=class_names))
