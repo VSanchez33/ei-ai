@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torchvision import datasets, transforms
-from torch.utils.data import DataLoader, Subset, WeightedRandomSampler
+from torch.utils.data import DataLoader, Subset
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, confusion_matrix
 
@@ -56,15 +56,7 @@ for idx in train_indices:
     class_counts[label] += 1
 print("Training samples per class:", {class_names[i]: class_counts[i] for i in range(num_classes)})
 
-# compute class weights for weighted loss
-# minority classes (Angry, Surprise) get higher weight -> sampled more often
-sample_weights = [1.0 / class_counts[targets[i]] for i in train_indices]
-sampler = WeightedRandomSampler(
-    weights=sample_weights,
-    num_samples=len(sample_weights),
-    replacement=True        # allows minority samples to be drawn multiple times
-)
-
+# removing weighted random sampler because was too aggressive with the other method
 
 # DataLoaders
 train_loader = DataLoader(train_dataset, batch_size=32, sampler=sampler) # now uses sampler to balance classes during training
@@ -119,6 +111,14 @@ class_weights = torch.tensor([1.0 / class_counts[i] for i in range(num_classes)]
 class_weights = class_weights / class_weights.sum() * num_classes  # normalize weights to sum to num_classes
 criterion = nn.CrossEntropyLoss(weight=class_weights)
 print("Class weights for loss:", {class_names[i]: class_weights[i].item() for i in range(num_classes)})
+
+# removing weighted random sampler
+class_counts_tensor = torch.tensor(class_counts, dtype=torch.float)
+class_weights = 1.0 / torch.sqrt(class_counts_tensor)  # using sqrt to reduce the aggressiveness of the weights
+class_weights = class_weights / class_weights.sum() * num_classes 
+class_weights = class_weights.to(device)
+criterion = nn.CrossEntropyLoss(weight=class_weights)
+print("Class weights for loss:", {class_names[i]: class_weights[i].item() for i in range(num_classes)}) 
 
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 
