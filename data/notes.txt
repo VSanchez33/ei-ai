@@ -1,0 +1,4 @@
+Project data should be inside src/dataset/ folder.
+  The dataset is very big > 7 GB, so it is not included. 
+    The link of the dataset is:
+https://affective-meld.github.io/
