@@ -1,3 +1,5 @@
+The original project approach (v1) was diverted due to dataset misalignment issues. To see the early-stage progress and the logic behind the first attempt, please switch to the branch: v1-misaligned-data. This current main branch contains the corrected implementation.
+
 # Transformer-based Multimodal Emotion Recognition on MELD
 
 This project now targets the **MELD** dataset and uses a **Transformer text encoder** plus a **CNN image encoder** for text, image, and multimodal emotion recognition.
