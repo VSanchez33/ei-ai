@@ -1,3 +1,10 @@
+# EI AI - Emotion Recognition Project
+## Team Members: 
+Paras Khanal   
+Shokhina Jalilova   
+Vincent Sanchez   
+
+## Overview
 The original project approach (v1) was diverted due to dataset misalignment issues. To see the early-stage progress and the logic behind the first attempt, please switch to the branch: v1-misaligned-data. This current main branch contains the corrected implementation.
 
 # Transformer-based Multimodal Emotion Recognition on MELD
