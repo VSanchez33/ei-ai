@@ -1,66 +1,199 @@
-# EI AI - Emotion Recognition Project
-## Team Members: 
-Paras Khanal   
-Shokhina Jalilova   
-Vincent Sanchez   
+# Quick Start Guide
 
-## Overview
-The original project approach (v1) was diverted due to dataset misalignment issues. To see the early-stage progress and the logic behind the first attempt, please switch to the branch: v1-misaligned-data. This current main branch contains the corrected implementation.
+## Initial Project Setup
 
-# Transformer-based Multimodal Emotion Recognition on MELD
+### 1. Clone Repository
 
-This project now targets the **MELD** dataset and uses a **Transformer text encoder** plus a **CNN image encoder** for text, image, and multimodal emotion recognition.
-
-## What changed
-- Switched the text branch from GRU to **DistilBERT**.
-- Switched the data pipeline from unpaired Kaggle image/text datasets to **MELD**, where text and video are aligned by utterance.
-- Added `prepare_meld.py` to extract MELD videos and save one representative frame per utterance clip.
-
-## Expected MELD layout
-Place your files like this:
-
-```text
-project/
-  dataset/
-    meld/
-      MELD.Raw.tar.gz
-      train_sent_emo.csv
-      dev_sent_emo.csv
-      test_sent_emo.csv
+```bash
+git clone https://github.com/NMSU-CSCI-4425-5425/project-ei-ai.git
+cd src
 ```
 
-## Step 1: prepare MELD
+---
+
+## 2. Create Virtual Environment
+
+### Linux / macOS
+
+```bash
+python -m venv eienv
+source eienv/bin/activate
+```
+
+### Windows
+
+```bash
+python -m venv eienv
+eienv\Scripts\activate
+```
+
+---
+
+## 3. Install Requirements
+
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+# Required External Dependency
+
+## FFmpeg
+
+FFmpeg is required for MELD video frame extraction.
+
+### Ubuntu / Debian
+
+```bash
+sudo apt install ffmpeg
+```
+
+### Windows
+
+Download:
+https://ffmpeg.org/download.html
+
+---
+
+# Full Project Structure
+
+```text
+src/
+│
+├── data/
+│   ├── dataset.py
+│   └── preprocessing.py
+│
+├── models/
+│   ├── cnn_image.py
+│   ├── transformer_text.py
+│   ├── multimodal_fusion.py
+│   └── gru_text.py
+│
+├── evaluation/
+│   └── metrics.py
+│
+├── utils/
+│   ├── config.py
+│   └── helpers.py
+│
+├── dataset/
+│   └── meld/
+│       ├── MELD.Raw.tar.gz
+│       ├── train_sent_emo.csv
+│       ├── dev_sent_emo.csv
+│       ├── test_sent_emo.csv
+│       ├── train_splits/
+│       ├── dev_splits_complete/
+│       ├── output_repeated_splits_test/
+│       └── frames/
+│
+├── checkpoints/
+│
+├── results/
+│
+├── prepare_meld.py
+├── train.py
+├── inference.py
+├── requirements.txt
+├── README.md
+└── .gitignore
+```
+
+---
+
+# Dataset Setup
+
+## Download MELD Dataset
+
+Official dataset link:
+https://affective-meld.github.io/
+
+Place the files into:
+
+```text
+dataset/meld/
+```
+
+Expected files:
+
+```text
+dataset/meld/
+├── MELD.Raw.tar.gz
+├── train_sent_emo.csv
+├── dev_sent_emo.csv
+└── test_sent_emo.csv
+```
+
+---
+
+# Step-by-Step Execution Pipeline
+
+# Step 1 — Prepare MELD Frames
+
 ```bash
 python prepare_meld.py --meld_root dataset/meld
 ```
 
 This will:
-- extract `MELD.Raw.tar.gz` if needed
-- read videos from the standard MELD split folders
-- save one frame per utterance into `dataset/meld/frames/`
+- extract MELD videos
+- process train/dev/test splits
+- extract one representative frame per utterance
+- save frames into:
 
-## Step 2: train
-### Multimodal
-```bash
-python train.py --dataset_type meld --meld_root dataset/meld --modality multimodal --epochs 10 --batch_size 8 --lr 2e-5
+```text
+dataset/meld/frames/
 ```
 
-### Text-only
+---
+
+# Step 2 — Train the Model
+
+## Multimodal Training (Recommended)
+
 ```bash
-python train.py --dataset_type meld --meld_root dataset/meld --modality text --epochs 5 --batch_size 8 --lr 2e-5
+python train.py \
+  --dataset_type meld \
+  --meld_root dataset/meld \
+  --modality multimodal \
+  --epochs 20 \
+  --batch_size 16 \
+  --lr 2e-5
 ```
 
-### Image-only
+---
+
+## Text-only Training
+
 ```bash
-python train.py --dataset_type meld --meld_root dataset/meld --modality image --epochs 10 --batch_size 16 --lr 1e-4
+python train.py \
+  --dataset_type meld \
+  --meld_root dataset/meld \
+  --modality text \
+  --epochs 5 \
+  --batch_size 8 \
+  --lr 2e-5
 ```
 
-## Optional: freeze text backbone
+---
+
+## Image-only Training
+
 ```bash
-python train.py --dataset_type meld --meld_root dataset/meld --modality multimodal --freeze_text
+python train.py \
+  --dataset_type meld \
+  --meld_root dataset/meld \
+  --modality image \
+  --epochs 10 \
+  --batch_size 16 \
+  --lr 1e-4
 ```
 
-## Inference
+---
+
+# Step 3 — Run Inference
+
 ```bash
 python inference.py \
   --modality multimodal \
@@ -71,7 +204,26 @@ python inference.py \
   --image dataset/meld/frames/test/dia100_utt4.jpg
 ```
 
-## Notes
-- `ffmpeg` is required for `prepare_meld.py`.
-- The first Hugging Face model load will download `distilbert-base-uncased`.
-- MELD uses these 7 emotion labels: anger, disgust, fear, joy, neutral, sadness, surprise.
+---
+
+# Output Locations
+
+## Saved Models
+
+```text
+checkpoints/
+```
+
+
+---
+
+# Recommended Hardware
+
+| Component | Recommendation |
+|---|---|
+| GPU | NVIDIA GPU (16GB+ VRAM preferred) |
+| RAM | 16GB+ |
+| Storage | 50GB+ free space |
+| CUDA | Recommended for training |
+
+---
