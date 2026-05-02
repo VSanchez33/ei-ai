@@ -6,6 +6,7 @@
 
 ```bash
 git clone https://github.com/NMSU-CSCI-4425-5425/project-ei-ai.git
+cd project-ei-ai
 cd src
 ```
 
