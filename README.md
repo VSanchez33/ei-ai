@@ -139,7 +139,29 @@ dataset/meld/
 
 ## Step 1 — Prepare MELD Frames
 
+First, run:
 ```bash
+python prepare_meld.py --meld_root dataset/meld
+```
+
+### Extract Nested MELD Archives
+
+After running `prepare_meld.py`, MELD may extract into a `MELD.Raw/` folder that still contains additional `.tar.gz` files. If the script says it extracted `0 frames` or shows messages like `Skipping missing split dir`, extract the nested archives into `dataset/meld/` with:
+
+```bash
+find dataset/meld/MELD.Raw -name "*.tar.gz" -exec tar -xzf {} -C dataset/meld \;
+```
+
+After extraction, dataset/meld should contain:
+```text
+dataset/meld/
+├── train_splits/
+├── dev_splits_complete/
+└── output_repeated_splits_test/
+```
+
+Then rerun:
+``` bash
 python prepare_meld.py --meld_root dataset/meld
 ```
 
