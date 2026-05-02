@@ -21,7 +21,7 @@ class TextTransformerConfig:
 @dataclass
 class ImageCNNConfig:
     input_channels: int = 3
-    image_size: int = 112
+    image_size: int = 224
     feature_dim: int = 256
 
 

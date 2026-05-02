@@ -6,6 +6,7 @@ import json
 import random
 from pathlib import Path
 from typing import Dict, List
+from torchvision import transforms
 
 import numpy as np
 import torch
@@ -81,8 +82,31 @@ class SimpleImageTransform:
         return torch.tensor(arr, dtype=torch.float32)
 
 
-def get_image_transforms(image_size: int = 112, split: str = "train"):
-    return SimpleImageTransform(image_size=image_size, train=(split == "train"))
+#def get_image_transforms(image_size: int = 112, split: str = "train"):
+    #return SimpleImageTransform(image_size=image_size, train=(split == "train"))
+
+def get_image_transforms(image_size=224, split="train"):
+    if split == "train":
+        return transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomRotation(10),
+            transforms.ColorJitter(brightness=0.2, contrast=0.2),
+            transforms.ToTensor(),
+            transforms.Normalize(
+                mean=[0.485, 0.456, 0.406],
+                std=[0.229, 0.224, 0.225],
+            ),
+        ])
+
+    return transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize(
+            mean=[0.485, 0.456, 0.406],
+            std=[0.229, 0.224, 0.225],
+        ),
+    ])
 
 
 def preprocess_image_array(arr: np.ndarray, image_size: int = 112) -> torch.Tensor:
