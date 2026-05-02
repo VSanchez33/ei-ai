@@ -50,6 +50,12 @@ FFmpeg is required for MELD video frame extraction.
 sudo apt install ffmpeg
 ```
 
+### MacOS (using Homebrew)
+
+```bash
+brew install ffmpeg
+```
+
 ### Windows
 
 Download:
@@ -131,7 +137,7 @@ dataset/meld/
 
 # Step-by-Step Execution Pipeline
 
-# Step 1 — Prepare MELD Frames
+## Step 1 — Prepare MELD Frames
 
 ```bash
 python prepare_meld.py --meld_root dataset/meld
@@ -149,9 +155,9 @@ dataset/meld/frames/
 
 ---
 
-# Step 2 — Train the Model
+## Step 2 — Train the Model
 
-## Multimodal Training (Recommended)
+### Multimodal Training (Recommended)
 
 ```bash
 python train.py \
@@ -165,7 +171,7 @@ python train.py \
 
 ---
 
-## Text-only Training
+### Text-only Training
 
 ```bash
 python train.py \
@@ -179,7 +185,7 @@ python train.py \
 
 ---
 
-## Image-only Training
+### Image-only Training
 
 ```bash
 python train.py \
@@ -193,7 +199,7 @@ python train.py \
 
 ---
 
-# Step 3 — Run Inference
+## Step 3 — Run Inference
 
 ```bash
 python inference.py \
