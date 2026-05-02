@@ -1,0 +1,22 @@
+# Environments
+venv/
+env/
+.env/
+bin/
+lib/
+share/
+include/
+
+# Python clutter
+__pycache__/
+*.pyc
+
+# Large Data & Models (Keep these out of GitHub)
+*.csv
+*.h5
+*.pt
+*.pkl
+
+# System files
+.DS_Store
+.vscode/
